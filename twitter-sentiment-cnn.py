@@ -48,11 +48,8 @@ def human_readable_output(a_batch):
     log('Network output on random data...')
     sentences = zip(*a_batch)[0]
     word_sentence = []
-    network_result = sess.run(tf.argmax(network_out, 1),
-                              feed_dict={data_in: zip(*a_batch)[0],
-                                         dropout_keep_prob: 1.0})
-    actual_result = sess.run(tf.argmax(data_out, 1),
-                             feed_dict={data_out: zip(*a_batch)[1]})
+    network_result = sess.run(tf.argmax(network_out, 1), feed_dict={data_in: zip(*a_batch)[0], dropout_keep_prob: 1.0})
+    actual_result = sess.run(tf.argmax(data_out, 1), feed_dict={data_out: zip(*a_batch)[1]})
     # Translate the string to ASCII (remove <PAD/> symbols)
     for s in sentences:
         output = ''
@@ -70,8 +67,7 @@ def human_readable_output(a_batch):
         else:
             status = '\033[91mWRONG\033[0m'
 
-        log('\n%s\nLABEL: %s - OUTPUT %s | %s' %
-            (word_sentence[idx], actual_sentiment, network_sentiment, status))
+        log('\n%s\nLABEL: %s - OUTPUT %s | %s' % (word_sentence[idx], actual_sentiment, network_sentiment, status))
 
 
 def evaluate_sentence(sentence, vocabulary):
@@ -81,11 +77,8 @@ def evaluate_sentence(sentence, vocabulary):
     Outputs result to stdout.
     """
     x_to_eval = string_to_int(sentence, vocabulary, max(len(_) for _ in x))
-    result = sess.run(tf.argmax(network_out, 1),
-                      feed_dict={data_in: x_to_eval,
-                                 dropout_keep_prob: 1.0})
-    unnorm_result = sess.run(network_out, feed_dict={data_in: x_to_eval,
-                                                     dropout_keep_prob: 1.0})
+    result = sess.run(tf.argmax(network_out, 1), feed_dict={data_in: x_to_eval, dropout_keep_prob: 1.0})
+    unnorm_result = sess.run(network_out, feed_dict={data_in: x_to_eval, dropout_keep_prob: 1.0})
     network_sentiment = 'POS' if result == 1 else 'NEG'
     log('Custom input evaluation:', network_sentiment)
     log('Actual output:', str(unnorm_result[0]))
@@ -203,9 +196,7 @@ with tf.device(device):
 
     # Embedding layer
     with tf.name_scope('embedding'):
-        W = tf.Variable(tf.random_uniform([vocab_size, FLAGS.embedding_size],
-                                          -1.0, 1.0),
-                        name='embedding_matrix')
+        W = tf.Variable(tf.random_uniform([vocab_size, FLAGS.embedding_size], -1.0, 1.0), name='embedding_matrix')
         embedded_chars = tf.nn.embedding_lookup(W, data_in)
         embedded_chars_expanded = tf.expand_dims(embedded_chars, -1)
 
@@ -223,29 +214,15 @@ with tf.device(device):
     for i, filter_size in enumerate(fs_save):
         with tf.name_scope('conv-maxpool-%s' % filter_size):
             # Convolution Layer
-            filter_shape = [filter_size,
-                            FLAGS.embedding_size,
-                            1,
-                            FLAGS.num_filters]
+            filter_shape = [filter_size, FLAGS.embedding_size, 1, FLAGS.num_filters]
             W = weight_variable(filter_shape, name='W_conv')
             b = bias_variable([FLAGS.num_filters], name='b_conv')
-            conv = tf.nn.conv2d(embedded_chars_expanded,
-                                W,
-                                strides=[1, 1, 1, 1],
-                                padding='VALID',
-                                name='conv')
+            conv = tf.nn.conv2d(embedded_chars_expanded, W, strides=[1, 1, 1, 1], padding='VALID', name='conv')
             # Activation function
             h = tf.nn.relu(tf.nn.bias_add(conv, b), name='relu')
             # Maxpooling layer
-            ksize = [1,
-                     sequence_length - filter_size + 1,
-                     1,
-                     1]
-            pooled = tf.nn.max_pool(h,
-                                    ksize=ksize,
-                                    strides=[1, 1, 1, 1],
-                                    padding='VALID',
-                                    name='pool')
+            ksize = [1, sequence_length - filter_size + 1, 1, 1]
+            pooled = tf.nn.max_pool(h, ksize=ksize, strides=[1, 1, 1, 1], padding='VALID', name='pool')
         pooled_outputs.append(pooled)
 
     # Combine the pooled feature tensors
@@ -275,8 +252,7 @@ with tf.device(device):
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
     # Testing operations
-    correct_prediction = tf.equal(tf.argmax(network_out, 1),
-                                  tf.argmax(data_out, 1))
+    correct_prediction = tf.equal(tf.argmax(network_out, 1), tf.argmax(data_out, 1))
     # Accuracy
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     # Validation ops
@@ -300,8 +276,7 @@ else:
 # Summaries for loss and accuracy
 loss_summary = tf.summary.scalar('Training loss', cross_entropy)
 valid_loss_summary = tf.summary.scalar('Validation loss', valid_mean_loss)
-valid_accuracy_summary = tf.summary.scalar('Validation accuracy',
-                                           valid_mean_accuracy)
+valid_accuracy_summary = tf.summary.scalar('Validation accuracy', valid_mean_accuracy)
 summary_writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)
 tf.summary.merge_all()
 
@@ -318,31 +293,23 @@ if FLAGS.train:
     batches_in_epoch = batches_in_epoch if batches_in_epoch != 0 else 1
     total_num_step = FLAGS.epochs * batches_in_epoch
 
-    batches_progressbar = tqdm(batches, total=total_num_step,
-                               desc='Starting training...')
+    batches_progressbar = tqdm(batches, total=total_num_step, desc='Starting training...')
 
     for batch in batches_progressbar:
         global_step += 1
         x_batch, y_batch = zip(*batch)
 
         # Run the training step
-        feed_dict = {data_in: x_batch,
-                     data_out: y_batch,
-                     dropout_keep_prob: 0.5}
-        train_result, loss_summary_result = sess.run([train_step, loss_summary],
-                                                     feed_dict=feed_dict)
+        feed_dict = {data_in: x_batch, data_out: y_batch, dropout_keep_prob: 0.5}
+        train_result, loss_summary_result = sess.run([train_step, loss_summary], feed_dict=feed_dict)
 
         # Print training accuracy
-        feed_dict = {data_in: x_batch,
-                     data_out: y_batch,
-                     dropout_keep_prob: 1.0}
+        feed_dict = {data_in: x_batch, data_out: y_batch, dropout_keep_prob: 1.0}
         accuracy_result = accuracy.eval(feed_dict=feed_dict)
         current_loss = cross_entropy.eval(feed_dict=feed_dict)
         current_epoch = (global_step / batches_in_epoch)
 
-        desc = 'Epoch: {} - loss: {:9.5f} - acc: {:7.5f}'.format(current_epoch,
-                                                                 current_loss,
-                                                                 accuracy_result)
+        desc = 'Epoch: {} - loss: {:9.5f} - acc: {:7.5f}'.format(current_epoch, current_loss, accuracy_result)
         batches_progressbar.set_description(desc)
 
         # Write loss summary
@@ -356,27 +323,20 @@ if FLAGS.train:
             losses = []
             for test_batch in test_batches:
                 x_test_batch, y_test_batch = zip(*test_batch)
-                feed_dict = {data_in: x_test_batch,
-                             data_out: y_test_batch,
-                             dropout_keep_prob: 1.0}
+                feed_dict = {data_in: x_test_batch, data_out: y_test_batch, dropout_keep_prob: 1.0}
                 accuracy_result = accuracy.eval(feed_dict=feed_dict)
                 current_loss = cross_entropy.eval(feed_dict=feed_dict)
                 accuracies.append(accuracy_result)
                 losses.append(current_loss)
 
             # Evaluate the mean accuracy of the model using the test accuracies
-            mean_accuracy_result, accuracy_summary_result = sess.run(
-                [valid_mean_accuracy, valid_accuracy_summary],
-                feed_dict={valid_accuracies: accuracies})
+            mean_accuracy_result, accuracy_summary_result = sess.run([valid_mean_accuracy, valid_accuracy_summary], feed_dict={valid_accuracies: accuracies})
             # Evaluate the mean loss of the model using the test losses
-            mean_loss_result, loss_summary_result = sess.run(
-                [valid_mean_loss, valid_loss_summary],
-                feed_dict={valid_losses: losses})
+            mean_loss_result, loss_summary_result = sess.run( [valid_mean_loss, valid_loss_summary], feed_dict={valid_losses: losses})
 
             valid_msg = 'Step %d of %d (epoch %d), validation accuracy: %g, ' \
                         'validation loss: %g' % \
-                        (global_step, total_num_step, current_epoch,
-                         mean_accuracy_result, mean_loss_result)
+                        (global_step, total_num_step, current_epoch, mean_accuracy_result, mean_loss_result)
             batches_progressbar.write(valid_msg)
             log(valid_msg, verbose=False)  # Write only to file
 
@@ -395,21 +355,15 @@ if FLAGS.train:
     losses = []
     for test_batch in test_batches:
         x_test_batch, y_test_batch = zip(*test_batch)
-        feed_dict = {data_in: x_test_batch,
-                     data_out: y_test_batch,
-                     dropout_keep_prob: 1.0}
+        feed_dict = {data_in: x_test_batch, data_out: y_test_batch, dropout_keep_prob: 1.0}
         accuracy_result = accuracy.eval(feed_dict=feed_dict)
         current_loss = cross_entropy.eval(feed_dict=feed_dict)
         accuracies.append(accuracy_result)
         losses.append(current_loss)
 
-    mean_accuracy_result, accuracy_summary_result = sess.run(
-        [valid_mean_accuracy, valid_accuracy_summary],
-        feed_dict={valid_accuracies: accuracies})
-    mean_loss_result, loss_summary_result = sess.run(
-        [valid_mean_loss, valid_loss_summary], feed_dict={valid_losses: losses})
-    log('End of training, validation accuracy: %g, validation loss: %g' %
-        (mean_accuracy_result, mean_loss_result))
+    mean_accuracy_result, accuracy_summary_result = sess.run([valid_mean_accuracy, valid_accuracy_summary], feed_dict={valid_accuracies: accuracies})
+    mean_loss_result, loss_summary_result = sess.run([valid_mean_loss, valid_loss_summary], feed_dict={valid_losses: losses})
+    log('End of training, validation accuracy: %g, validation loss: %g' % (mean_accuracy_result, mean_loss_result))
 
     # Write summaries
     summary_writer.add_summary(accuracy_summary_result, global_step)
@@ -417,8 +371,11 @@ if FLAGS.train:
 
 # Evaluate custom input
 if FLAGS.custom_input != '':
-    log('Evaluating custom input:', FLAGS.custom_input)
-    evaluate_sentence(FLAGS.custom_input, vocabulary)
+    # log('Evaluating custom input:', FLAGS.custom_input)
+    # evaluate_sentence(FLAGS.custom_input, vocabulary)
+    while True:
+        qstr = input('Enter Query: ')
+        evaluate_sentence(qstr, vocabulary)
 
 # Evaluate held-out batch
 if FLAGS.evaluate_batch:
@@ -436,10 +393,6 @@ if FLAGS.save:
 # Save as binary Protobuffer
 if FLAGS.save_protobuf:
     log('Saving Protobuf...')
-    minimal_graph = convert_variables_to_constants(sess,
-                                                   sess.graph_def,
-                                                   ['output/Softmax'])
-    tf.train.write_graph(minimal_graph, RUN_DIR, 'minimal_graph.proto',
-                         as_text=False)
-    tf.train.write_graph(minimal_graph, RUN_DIR, 'minimal_graph.txt',
-                         as_text=True)
+    minimal_graph = convert_variables_to_constants(sess, sess.graph_def, ['output/Softmax'])
+    tf.train.write_graph(minimal_graph, RUN_DIR, 'minimal_graph.proto', as_text=False)
+    tf.train.write_graph(minimal_graph, RUN_DIR, 'minimal_graph.txt', as_text=True)
