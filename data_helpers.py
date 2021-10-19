@@ -43,33 +43,33 @@ def load_data_and_labels(dataset_fraction):
     strings and one of labels.
     Returns the lists. 
     """
-    print "\tdata_helpers: loading positive examples..."
+    print("\tdata_helpers: loading positive examples...")
     positive_examples = list(open(POS_DATASET_PATH).readlines())
     positive_examples = [s.strip() for s in positive_examples]
-    print "\tdata_helpers: [OK]"
-    print "\tdata_helpers: loading negative examples..."
+    print("\tdata_helpers: [OK]")
+    print("\tdata_helpers: loading negative examples...")
     negative_examples = list(open(NEG_DATASET_PATH).readlines())
     negative_examples = [s.strip() for s in negative_examples]
-    print "\tdata_helpers: [OK]"
+    print("\tdata_helpers: [OK]")
 
     positive_examples = sample_list(positive_examples, dataset_fraction)
     negative_examples = sample_list(negative_examples, dataset_fraction)
 
     # Split by words
     x_text = positive_examples + negative_examples
-    print "\tdata_helpers: cleaning strings..."
+    print("\tdata_helpers: cleaning strings...")
     x_text = [clean_str(sent) for sent in x_text]
     x_text = [s.split(" ") for s in x_text]
-    print "\tdata_helpers: [OK]"
+    print("\tdata_helpers: [OK]")
 
     # Generate labels
-    print "\tdata_helpers: generating labels..."
+    print("\tdata_helpers: generating labels...")
     positive_labels = [[0, 1] for _ in positive_examples]
     negative_labels = [[1, 0] for _ in negative_examples]
-    print "\tdata_helpers: [OK]"
-    print "\tdata_helpers: concatenating labels..."
+    print("\tdata_helpers: [OK]")
+    print("\tdata_helpers: concatenating labels...")
     y = np.concatenate([positive_labels, negative_labels], 0)
-    print "\tdata_helpers: [OK]"
+    print("\tdata_helpers: [OK]")
     return [x_text, y]
 
 
@@ -146,8 +146,8 @@ def string_to_int(sentence, vocabulary, max_len):
         x = np.array([[vocabulary[word] for word in sentence]
                       for sentence in padded_x_text])
         return x
-    except KeyError, e:
-        print "The following word is unknown to the network: %s" % str(e)
+    except(KeyError, e):
+        print("The following word is unknown to the network: %s" % str(e))
         quit()
 
 
@@ -158,15 +158,15 @@ def load_data(dataset_fraction):
     """
     # Load and preprocess data
     sentences, labels = load_data_and_labels(dataset_fraction)
-    print "\tdata_helpers: padding strings..."
+    print("\tdata_helpers: padding strings...")
     sentences_padded = pad_sentences(sentences)
-    print "\tdata_helpers: [OK]"
-    print "\tdata_helpers: building vocabulary..."
+    print("\tdata_helpers: [OK]")
+    print("\tdata_helpers: building vocabulary...")
     vocabulary, vocabulary_inv = build_vocab()
-    print "\tdata_helpers: [OK]"
-    print "\tdata_helpers: building processed datasets..."
+    print("\tdata_helpers: [OK]")
+    print("\tdata_helpers: building processed datasets...")
     x, y = build_input_data(sentences_padded, labels, vocabulary)
-    print "\tdata_helpers: [OK]"
+    print("\tdata_helpers: [OK]")
     return [x, y, vocabulary, vocabulary_inv]
 
 
@@ -174,12 +174,14 @@ def batch_iter(data, batch_size, num_epochs):
     """
     Generates a batch iterator for a dataset.
     """
-    data = np.array(data)
+    # data = np.array(data)
+    data = np.array(list(map(list,data)))
     data_size = len(data)
-    num_batches_per_epoch = int(len(data)/batch_size) + 1
+    num_batches_per_epoch = int(data_size/batch_size) + 1
     for epoch in range(num_epochs):
         # Shuffle the data at each epoch
         shuffle_indices = np.random.permutation(np.arange(data_size))
+        print("shuffle_indices = ", shuffle_indices)
         shuffled_data = data[shuffle_indices]
         for batch_num in range(num_batches_per_epoch):
             start_index = batch_num * batch_size

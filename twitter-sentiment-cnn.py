@@ -1,17 +1,23 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 import numpy as np
 from random import randint
 from data_helpers import batch_iter, load_data, string_to_int
 import os
 import time
+import copy
+import warnings
 from tensorflow.python.framework.graph_util import convert_variables_to_constants
 from tqdm import tqdm
+
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 
 def log(*string, **kwargs):
     output = ' '.join(string)
     if kwargs.pop('verbose', True):
-        print output
+        print(output)
     LOG_FILE.write(''.join(['\n', output]))
 
 
@@ -135,7 +141,7 @@ else:
     CHECKPOINT_FILE_PATH = os.path.abspath(os.path.join(RUN_DIR, 'ckpt.ckpt'))
 os.mkdir(RUN_DIR)
 SUMMARY_DIR = os.path.join(RUN_DIR, 'summaries')
-LOG_FILE = open(LOG_FILE_PATH, 'a', 0)
+LOG_FILE = open(LOG_FILE_PATH, 'a')
 
 
 log('======================= START! ========================')
@@ -170,7 +176,7 @@ else:
 
 # Log run data
 log('\nFlags:')
-for attr, value in sorted(FLAGS.__flags.iteritems()):
+for attr, value in sorted(FLAGS.__flags.items()):
     log('\t%s = %s' % (attr, value._value))
 log('\nDataset:')
 log('\tTrain set size = %d\n'
@@ -205,7 +211,16 @@ with tf.device(device):
 
     # Convolution + ReLU + Pooling layer
     pooled_outputs = []
-    for i, filter_size in enumerate(filter_sizes):
+    fs_save = copy.deepcopy(filter_sizes)
+    print("Before for loop, len(filter_sizes) = ", len(list(fs_save)))
+    fs_save = copy.deepcopy(filter_sizes)
+    for i, filter_size in enumerate(fs_save):
+        print("In for loop, filter_size = ", filter_size)
+
+    fs_save = copy.deepcopy(filter_sizes)
+    print("After for loop, len(filter_sizes) = ", len(list(fs_save)))
+    fs_save = copy.deepcopy(filter_sizes)
+    for i, filter_size in enumerate(fs_save):
         with tf.name_scope('conv-maxpool-%s' % filter_size):
             # Convolution Layer
             filter_shape = [filter_size,
@@ -234,7 +249,12 @@ with tf.device(device):
         pooled_outputs.append(pooled)
 
     # Combine the pooled feature tensors
-    num_filters_total = FLAGS.num_filters * len(filter_sizes)
+    print("filter_sizes = ", filter_sizes)
+    print("FLAGS.num_filters = ", FLAGS.num_filters)
+    fs_save = copy.deepcopy(filter_sizes)
+    num_filters_total = FLAGS.num_filters * len(list(fs_save))
+    print("num_filters_total = ", num_filters_total)
+
     h_pool = tf.concat(pooled_outputs, 3)
     h_pool_flat = tf.reshape(h_pool, [-1, num_filters_total])
 
@@ -290,7 +310,7 @@ if FLAGS.train:
     # Batches
     batches = batch_iter(zip(x_train, y_train), FLAGS.batch_size, FLAGS.epochs)
     test_batches = list(batch_iter(zip(x_test, y_test), FLAGS.batch_size, 1))
-    my_batch = batches.next()  # To use with human_readable_output()
+    my_batch = batches.__next__()  # To use with human_readable_output()
 
     # Pretty-printing variables
     global_step = 0
